@@ -18,7 +18,7 @@ public protocol BaseMessage: Codable, Sendable {
 }
 
 // MARK: - Message Type Enumeration
-public enum MessageType: String, Codable, CaseIterable {
+public enum MessageType: String, Codable, CaseIterable, Sendable {
     case heartbeat = "heartbeat"
     case systemStatus = "system_status"
     case userActivity = "user_activity"
@@ -30,14 +30,14 @@ public enum MessageType: String, Codable, CaseIterable {
 }
 
 // MARK: - Daemon Type Enumeration
-public enum DaemonType: String, Codable, CaseIterable {
+public enum DaemonType: String, Codable, CaseIterable, Sendable {
     case user = "user_daemon"
     case system = "system_daemon"
     case broadcast = "broadcast"
 }
 
 // MARK: - Priority Levels
-public enum MessagePriority: String, Codable, CaseIterable {
+public enum MessagePriority: String, Codable, CaseIterable, Sendable {
     case low = "low"
     case normal = "normal" 
     case high = "high"
@@ -86,7 +86,7 @@ public struct SystemStatusMessage: BaseMessage {
     }
 }
 
-public enum SystemStatus: String, Codable {
+public enum SystemStatus: String, Codable, Sendable {
     case healthy = "healthy"
     case degraded = "degraded"
     case critical = "critical"
