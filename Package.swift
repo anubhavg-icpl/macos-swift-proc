@@ -32,15 +32,7 @@ let package = Package(
                 .product(name: "PubNubSDK", package: "swift"),
                 .product(name: "Logging", package: "swift-log")
             ],
-            path: "Sources/UserDaemon",
-            linkerSettings: [
-                .unsafeFlags([
-                    "-Xlinker", "-sectcreate",
-                    "-Xlinker", "__TEXT",
-                    "-Xlinker", "__info_plist",
-                    "-Xlinker", "Sources/UserDaemon/Info.plist"
-                ])
-            ]
+            path: "Sources/UserDaemon"
         ),
 
         // System daemon executable target
@@ -51,15 +43,7 @@ let package = Package(
                 .product(name: "PubNubSDK", package: "swift"),
                 .product(name: "Logging", package: "swift-log")
             ],
-            path: "Sources/SystemDaemon",
-            linkerSettings: [
-                .unsafeFlags([
-                    "-Xlinker", "-sectcreate",
-                    "-Xlinker", "__TEXT",
-                    "-Xlinker", "__info_plist",
-                    "-Xlinker", "Sources/SystemDaemon/Info.plist"
-                ])
-            ]
+            path: "Sources/SystemDaemon"
         ),
 
         // Shared messaging library
