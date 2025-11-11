@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.dualdaemon.system</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/sbin/system-daemon</string>
+    </array>
+    
+    <key>RunAtLoad</key>
+    <true/>
+    
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+        <key>Crashed</key>
+        <true/>
+    </dict>
+    
+    <key>StandardOutPath</key>
+    <string>/var/log/dualdaemon/system-daemon.stdout</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/var/log/dualdaemon/system-daemon.stderr</string>
+    
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PUBNUB_PUBLISH_KEY</key>
+        <string>YOUR_PUBLISH_KEY</string>
+        <key>PUBNUB_SUBSCRIBE_KEY</key>
+        <string>YOUR_SUBSCRIBE_KEY</string>
+        <key>DUALDAEMON_ENCRYPTION_KEY</key>
+        <string>YOUR_ENCRYPTION_KEY</string>
+    </dict>
+    
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+    
+    <key>ProcessType</key>
+    <string>Background</string>
+    
+    <key>UserName</key>
+    <string>root</string>
+</dict>
+</plist>

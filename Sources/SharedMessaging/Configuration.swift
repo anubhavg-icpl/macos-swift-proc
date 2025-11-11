@@ -45,12 +45,27 @@ public struct PubSubConfiguration: Codable {
         self.presenceTimeout = presenceTimeout
     }
 
-    public static let `default` = PubSubConfiguration(
-        publishKey: ProcessInfo.processInfo.environment["PUBNUB_PUBLISH_KEY"] ?? "demo",
-        subscribeKey: ProcessInfo.processInfo.environment["PUBNUB_SUBSCRIBE_KEY"] ?? "demo",
-        userId: ProcessInfo.processInfo.environment["PUBNUB_USER_ID"] ?? UUID().uuidString,
-        channels: .default
-    )
+    public static let `default`: PubSubConfiguration = {
+        guard let publishKey = ProcessInfo.processInfo.environment["PUBNUB_PUBLISH_KEY"],
+              let subscribeKey = ProcessInfo.processInfo.environment["PUBNUB_SUBSCRIBE_KEY"],
+              !publishKey.isEmpty,
+              !subscribeKey.isEmpty else {
+            fatalError("""
+                FATAL: PubNub credentials not configured. 
+                Set PUBNUB_PUBLISH_KEY and PUBNUB_SUBSCRIBE_KEY environment variables.
+                Production systems MUST NOT use demo credentials.
+                """)
+        }
+        
+        let userId = ProcessInfo.processInfo.environment["PUBNUB_USER_ID"] ?? UUID().uuidString
+        
+        return PubSubConfiguration(
+            publishKey: publishKey,
+            subscribeKey: subscribeKey,
+            userId: userId,
+            channels: .default
+        )
+    }()
 }
 
 public struct ChannelConfiguration: Codable {
@@ -122,12 +137,25 @@ public struct SecurityConfiguration: Codable {
         self.requireSignatures = requireSignatures
     }
 
-    public static let `default` = SecurityConfiguration(
-        enableEncryption: true,
-        encryptionKey: ProcessInfo.processInfo.environment["DUALDAEMON_ENCRYPTION_KEY"],
-        allowedSources: nil,
-        requireSignatures: false
-    )
+    public static let `default`: SecurityConfiguration = {
+        let enableEncryption = ProcessInfo.processInfo.environment["DUALDAEMON_DISABLE_ENCRYPTION"] != "true"
+        let encryptionKey = ProcessInfo.processInfo.environment["DUALDAEMON_ENCRYPTION_KEY"]
+        
+        if enableEncryption && (encryptionKey == nil || encryptionKey?.isEmpty == true) {
+            fatalError("""
+                FATAL: Encryption is enabled but no encryption key provided.
+                Set DUALDAEMON_ENCRYPTION_KEY environment variable or disable encryption.
+                WARNING: Disabling encryption is NOT recommended for production.
+                """)
+        }
+        
+        return SecurityConfiguration(
+            enableEncryption: enableEncryption,
+            encryptionKey: encryptionKey,
+            allowedSources: nil,
+            requireSignatures: false
+        )
+    }()
 }
 
 // MARK: - Configuration Manager

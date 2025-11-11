@@ -38,32 +38,60 @@ public final class DaemonLogger {
         guard let logPath = configuration.logFilePath else { return }
 
         let logDirectory = URL(fileURLWithPath: logPath)
-        try? FileManager.default.createDirectory(at: logDirectory, withIntermediateDirectories: true)
+        do {
+            try FileManager.default.createDirectory(at: logDirectory, withIntermediateDirectories: true, attributes: nil)
+        } catch {
+            // Use os_log as fallback since file logging isn't available
+            os_log("CRITICAL: Failed to create log directory at %{public}@: %{public}@", 
+                   log: osLogger, type: .fault, logPath, error.localizedDescription)
+            return
+        }
 
         // Create log file path for this daemon
         let logFile = logDirectory.appendingPathComponent("\(daemonType.rawValue).log")
 
         // Setup log rotation if file is too large
-        if let attributes = try? FileManager.default.attributesOfItem(atPath: logFile.path),
-           let fileSize = attributes[.size] as? Int,
-           fileSize > configuration.maxLogFileSize {
-            rotateLogFile(logFile)
+        do {
+            let attributes = try FileManager.default.attributesOfItem(atPath: logFile.path)
+            if let fileSize = attributes[.size] as? Int,
+               fileSize > configuration.maxLogFileSize {
+                do {
+                    try rotateLogFile(logFile)
+                } catch {
+                    os_log("ERROR: Failed to rotate log file: %{public}@", 
+                           log: osLogger, type: .error, error.localizedDescription)
+                }
+            }
+        } catch CocoaError.fileReadNoSuchFile {
+            // File doesn't exist yet, this is fine
+        } catch {
+            os_log("WARNING: Failed to check log file size: %{public}@", 
+                   log: osLogger, type: .default, error.localizedDescription)
         }
     }
 
-    private func rotateLogFile(_ logFile: URL) {
+    private func rotateLogFile(_ logFile: URL) throws {
+        // Delete the oldest rotation if it exists
+        let oldestRotation = logFile.appendingPathExtension("\(configuration.logRotationCount)")
+        if FileManager.default.fileExists(atPath: oldestRotation.path) {
+            try FileManager.default.removeItem(at: oldestRotation)
+        }
+        
+        // Rotate existing files
         for i in (1..<configuration.logRotationCount).reversed() {
             let oldFile = logFile.appendingPathExtension("\(i)")
             let newFile = logFile.appendingPathExtension("\(i + 1)")
 
             if FileManager.default.fileExists(atPath: oldFile.path) {
-                try? FileManager.default.moveItem(at: oldFile, to: newFile)
+                try FileManager.default.moveItem(at: oldFile, to: newFile)
             }
         }
 
         // Move current log to .1
-        let firstRotation = logFile.appendingPathExtension("1")
-        try? FileManager.default.moveItem(at: logFile, to: firstRotation)
+        if FileManager.default.fileExists(atPath: logFile.path) {
+            let firstRotation = logFile.appendingPathExtension("1")
+            try FileManager.default.moveItem(at: logFile, to: firstRotation)
+        }
     }
 
     // MARK: - Logging Methods
@@ -121,16 +149,21 @@ public final class DaemonLogger {
         let timestamp = ISO8601DateFormatter().string(from: Date())
         let logLine = "[\(timestamp)] [\(level.rawValue.uppercased())] \(message)\n"
 
-        if let data = logLine.data(using: .utf8) {
+        guard let data = logLine.data(using: .utf8) else { return }
+        
+        do {
             if FileManager.default.fileExists(atPath: logFile.path) {
-                if let fileHandle = try? FileHandle(forWritingTo: logFile) {
-                    fileHandle.seekToEndOfFile()
-                    fileHandle.write(data)
-                    fileHandle.closeFile()
-                }
+                let fileHandle = try FileHandle(forWritingTo: logFile)
+                defer { try? fileHandle.close() }
+                try fileHandle.seekToEnd()
+                try fileHandle.write(contentsOf: data)
             } else {
-                try? data.write(to: logFile)
+                try data.write(to: logFile, options: .atomic)
             }
+        } catch {
+            // Last resort: log to os_log
+            os_log("CRITICAL: Failed to write to log file: %{public}@", 
+                   log: osLogger, type: .fault, error.localizedDescription)
         }
     }
 }
