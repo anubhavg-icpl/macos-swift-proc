@@ -12,7 +12,7 @@ import os.log
 public final class DaemonLogger {
 
     private let osLogger: OSLog
-    private let swiftLogger: Logger
+    private let swiftLogger: Logging.Logger
     private let configuration: LoggingConfiguration
     private let daemonType: DaemonType
 
@@ -24,7 +24,7 @@ public final class DaemonLogger {
         self.osLogger = OSLog(subsystem: "com.dualdaemon.\(daemonType.rawValue)", category: "general")
 
         // Setup Swift Logger
-        var logger = Logger(label: "dualdaemon.\(daemonType.rawValue)")
+        var logger = Logging.Logger(label: "dualdaemon.\(daemonType.rawValue)")
         logger.logLevel = configuration.logLevel.swiftLogLevel
         self.swiftLogger = logger
 
@@ -170,7 +170,7 @@ public final class DaemonLogger {
 
 // MARK: - LogLevel Extensions
 extension LogLevel {
-    var swiftLogLevel: Logger.Level {
+    var swiftLogLevel: Logging.Logger.Level {
         switch self {
         case .trace: return .trace
         case .debug: return .debug
@@ -193,30 +193,30 @@ extension LogLevel {
     }
 }
 
-// MARK: - Logger Protocol Conformance
+// MARK: - Logger Protocol Conformance  
 extension DaemonLogger: LogHandler {
-    public var logLevel: Logger.Level {
+    public var logLevel: Logging.Logger.Level {
         get { swiftLogger.logLevel }
         set { /* Cannot set on our wrapper */ }
     }
 
-    public subscript(metadataKey metadataKey: String) -> Logger.Metadata.Value? {
+    public subscript(metadataKey metadataKey: String) -> Logging.Logger.Metadata.Value? {
         get { swiftLogger[metadataKey: metadataKey] }
         set { /* Cannot set on our wrapper */ }
     }
 
-    public var metadata: Logger.Metadata {
-        get { swiftLogger.metadata }
+    public var metadata: Logging.Logger.Metadata {
+        get { [:] }  // Return empty metadata as we don't track it separately
         set { /* Cannot set on our wrapper */ }
     }
 
-    public func log(level: Logger.Level, message: Logger.Message, metadata: Logger.Metadata?, source: String, file: String, function: String, line: UInt) {
+    public func log(level: Logging.Logger.Level, message: Logging.Logger.Message, metadata: Logging.Logger.Metadata?, source: String, file: String, function: String, line: UInt) {
         self.log(level: LogLevel.from(swiftLevel: level), message: message.description, file: file, function: function, line: Int(line))
     }
 }
 
 extension LogLevel {
-    static func from(swiftLevel: Logger.Level) -> LogLevel {
+    static func from(swiftLevel: Logging.Logger.Level) -> LogLevel {
         switch swiftLevel {
         case .trace: return .trace
         case .debug: return .debug
