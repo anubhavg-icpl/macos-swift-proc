@@ -8,6 +8,7 @@
 import Foundation
 import Logging
 import PubNubSDK
+import SharedMessaging
 
 @main
 struct SystemDaemon {
